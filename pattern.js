@@ -30,6 +30,10 @@ var __extends =
     };
   })();
 {
+  var Transformer = /** @class */ (function () {
+    function Transformer() {}
+    return Transformer;
+  })();
   var Expression = /** @class */ (function () {
     function Expression() {}
     return Expression;
@@ -47,6 +51,9 @@ var __extends =
     Number.prototype.evaluate = function () {
       return this.value_;
     };
+    Number.prototype.transform = function (tr) {
+      return tr.transformNumber(this);
+    };
     return Number;
   })(Expression);
   var Operations = void 0;
@@ -56,7 +63,7 @@ var __extends =
     Operations["DIV"] = "/";
     Operations["MUL"] = "*";
   })(Operations || (Operations = {}));
-  var BinaryOperation = /** @class */ (function (_super) {
+  var BinaryOperation_1 = /** @class */ (function (_super) {
     __extends(BinaryOperation, _super);
     function BinaryOperation(left, op, right) {
       var _this = _super.call(this) || this;
@@ -93,9 +100,12 @@ var __extends =
       }
       return 0;
     };
+    BinaryOperation.prototype.transform = function (tr) {
+      return tr.transformBinaryOperation(this);
+    };
     return BinaryOperation;
   })(Expression);
-  var FuntionalCall = /** @class */ (function (_super) {
+  var FuntionalCall_1 = /** @class */ (function (_super) {
     __extends(FuntionalCall, _super);
     function FuntionalCall(name, arg) {
       var _this = _super.call(this) || this;
@@ -117,9 +127,12 @@ var __extends =
       }
       return 0;
     };
+    FuntionalCall.prototype.transform = function (tr) {
+      return tr.transformFunctionCall(this);
+    };
     return FuntionalCall;
   })(Expression);
-  var Variable = /** @class */ (function (_super) {
+  var Variable_1 = /** @class */ (function (_super) {
     __extends(Variable, _super);
     function Variable(name) {
       var _this = _super.call(this) || this;
@@ -132,18 +145,48 @@ var __extends =
     Variable.prototype.evaluate = function () {
       return 0.0;
     };
+    Variable.prototype.transform = function (tr) {
+      return tr.transformVariable(this);
+    };
     return Variable;
   })(Expression);
-  var e1 = new Number_1(1.234);
-  var e2 = new Number_1(-1.234);
-  var e3 = new BinaryOperation(e1, Operations.DIV, e2);
-  console.log(e3.evaluate());
+  var CopySyntaxTree = /** @class */ (function (_super) {
+    __extends(CopySyntaxTree, _super);
+    function CopySyntaxTree() {
+      return (_super !== null && _super.apply(this, arguments)) || this;
+    }
+    CopySyntaxTree.prototype.transformNumber = function (number) {
+      return new Number_1(number.value());
+    };
+    CopySyntaxTree.prototype.transformBinaryOperation = function (
+      binaryOperation
+    ) {
+      return new BinaryOperation_1(
+        binaryOperation.left().transform(this),
+        binaryOperation.op(),
+        binaryOperation.right().transform(this)
+      );
+    };
+    CopySyntaxTree.prototype.transformFunctionCall = function (functionalCall) {
+      return new FuntionalCall_1(
+        functionalCall.name(),
+        functionalCall.arg().transform(this)
+      );
+    };
+    CopySyntaxTree.prototype.transformVariable = function (variable) {
+      return new Variable_1(variable.name());
+    };
+    return CopySyntaxTree;
+  })(Transformer);
   var n32 = new Number_1(32.0);
   var n16 = new Number_1(16.0);
-  var minus = new BinaryOperation(n32, Operations.MINUS, n16);
-  var callSqrt = new FuntionalCall("sqrt", minus);
-  var n2 = new Number_1(2.0);
-  var mult = new BinaryOperation(n2, Operations.MUL, callSqrt);
-  var callAbs = new FuntionalCall("abs", mult);
-  console.log(callAbs.evaluate());
+  var minus = new BinaryOperation_1(n32, Operations.MINUS, n16);
+  var callSqrt = new FuntionalCall_1("sqrt", minus);
+  var var1 = new Variable_1("var");
+  var mult = new BinaryOperation_1(var1, Operations.MUL, callSqrt);
+  var callAbs = new FuntionalCall_1("abs", mult);
+  var CST = new CopySyntaxTree();
+  var newExpr = minus.transform(CST);
+  console.log(newExpr.evaluate());
+  console.log(minus.evaluate());
 }
