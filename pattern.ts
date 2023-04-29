@@ -1,6 +1,16 @@
 {
+  abstract class Transformer {
+    abstract transformNumber(number: Number): Expression;
+    abstract transformBinaryOperation(
+      binaryOperation: BinaryOperation
+    ): Expression;
+    abstract transformFunctionCall(functionalCall: FuntionalCall): Expression;
+    abstract transformVariable(variable: Variable): Expression;
+  }
+
   abstract class Expression {
     abstract evaluate(): number;
+    abstract transform(tr: Transformer): Expression;
   }
 
   class Number extends Expression {
@@ -13,6 +23,9 @@
     }
     evaluate(): number {
       return this.value_;
+    }
+    transform(tr: Transformer): Expression {
+      return tr.transformNumber(this);
     }
     private value_: number;
   }
@@ -27,7 +40,6 @@
   class BinaryOperation extends Expression {
     constructor(left: Expression, op: Operations, right: Expression) {
       super();
-
       this.left_ = left;
       this.right_ = right;
       this.op_ = op;
@@ -60,10 +72,14 @@
       }
       return 0;
     }
+    transform(tr: Transformer): Expression {
+      return tr.transformBinaryOperation(this);
+    }
     private left_;
     private right_;
     private op_: Operations;
   }
+
   class FuntionalCall extends Expression {
     constructor(name: string, arg: Expression) {
       super();
@@ -84,6 +100,9 @@
       }
       return 0;
     }
+    transform(tr: Transformer): Expression {
+      return tr.transformFunctionCall(this);
+    }
     private name_: string;
     private arg_: Expression;
   }
@@ -99,19 +118,81 @@
     evaluate(): number {
       return 0.0;
     }
+    transform(tr: Transformer): Expression {
+      return tr.transformVariable(this);
+    }
     private name_: string;
   }
 
-  let e1: Expression = new Number(1.234);
-  let e2: Expression = new Number(-1.234);
-  let e3: Expression = new BinaryOperation(e1, Operations.DIV, e2);
-  console.log(e3.evaluate());
-  let n32: Expression = new Number(32.0);
-  let n16: Expression = new Number(16.0);
-  let minus: Expression = new BinaryOperation(n32, Operations.MINUS, n16);
-  let callSqrt = new FuntionalCall("sqrt", minus);
-  let n2: Expression = new Number(2.0);
-  let mult: Expression = new BinaryOperation(n2, Operations.MUL, callSqrt);
-  let callAbs = new FuntionalCall("abs", mult);
-  console.log(callAbs.evaluate());
+  class CopySyntaxTree extends Transformer {
+    transformNumber(number: Number): Expression {
+      return new Number(number.value());
+    }
+    transformBinaryOperation(binaryOperation: BinaryOperation): Expression {
+      return new BinaryOperation(
+        binaryOperation.left().transform(this),
+        binaryOperation.op(),
+        binaryOperation.right().transform(this)
+      );
+    }
+    transformFunctionCall(functionalCall: FuntionalCall): Expression {
+      return new FuntionalCall(
+        functionalCall.name(),
+        functionalCall.arg().transform(this)
+      );
+    }
+    transformVariable(variable: Variable): Expression {
+      return new Variable(variable.name());
+    }
+  }
+
+  class FoldConstants extends Transformer {
+    transformNumber(number: Number): Expression {
+      return new Number(number.value());
+    }
+    transformBinaryOperation(binaryOperation: BinaryOperation): Expression {
+      let newleft: Expression = binaryOperation.left().transform(this);
+      let newright: Expression = binaryOperation.right().transform(this);
+      let newbinaryOperation: BinaryOperation = new BinaryOperation(
+        newleft,
+        binaryOperation.op(),
+        newright
+      );
+      if (newleft instanceof Number && newright instanceof Number) {
+        return new Number(newbinaryOperation.evaluate());
+      }
+      return newbinaryOperation;
+    }
+    transformFunctionCall(functionalCall: FuntionalCall): Expression {
+      let newarg: Expression = functionalCall.arg().transform(this);
+      let newfunctionalCall: FuntionalCall = new FuntionalCall(
+        functionalCall.name(),
+        newarg
+      );
+      if (newarg instanceof Number) {
+        return new Number(newfunctionalCall.evaluate());
+      }
+      return newfunctionalCall;
+    }
+    transformVariable(variable: Variable): Expression {
+      return new Variable(variable.name());
+    }
+  }
+
+  let n32: Number = new Number(32.0);
+  let n16: Number = new Number(16.0);
+  let minus: BinaryOperation = new BinaryOperation(n32, Operations.MINUS, n16);
+  let callSqrt: FuntionalCall = new FuntionalCall("sqrt", minus);
+  let var1: Variable = new Variable("var");
+  let mult: BinaryOperation = new BinaryOperation(
+    var1,
+    Operations.MUL,
+    callSqrt
+  );
+  let callAbs: FuntionalCall = new FuntionalCall("abs", mult);
+
+  let FC = new FoldConstants();
+  let newExpr: Expression = callAbs.transform(FC);
+  console.log(callAbs);
+  console.log(newExpr);
 }
