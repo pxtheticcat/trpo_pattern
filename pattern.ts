@@ -146,8 +146,41 @@
     }
   }
 
-  let n32: Expression = new Number(32.0);
-  let n16: Expression = new Number(16.0);
+  class FoldConstants extends Transformer {
+    transformNumber(number: Number): Expression {
+      return new Number(number.value());
+    }
+    transformBinaryOperation(binaryOperation: BinaryOperation): Expression {
+      let newleft: Expression = binaryOperation.left().transform(this);
+      let newright: Expression = binaryOperation.right().transform(this);
+      let newbinaryOperation: BinaryOperation = new BinaryOperation(
+        newleft,
+        binaryOperation.op(),
+        newright
+      );
+      if (newleft instanceof Number && newright instanceof Number) {
+        return new Number(newbinaryOperation.evaluate());
+      }
+      return newbinaryOperation;
+    }
+    transformFunctionCall(functionalCall: FuntionalCall): Expression {
+      let newarg: Expression = functionalCall.arg().transform(this);
+      let newfunctionalCall: FuntionalCall = new FuntionalCall(
+        functionalCall.name(),
+        newarg
+      );
+      if (newarg instanceof Number) {
+        return new Number(newfunctionalCall.evaluate());
+      }
+      return newfunctionalCall;
+    }
+    transformVariable(variable: Variable): Expression {
+      return new Variable(variable.name());
+    }
+  }
+
+  let n32: Number = new Number(32.0);
+  let n16: Number = new Number(16.0);
   let minus: BinaryOperation = new BinaryOperation(n32, Operations.MINUS, n16);
   let callSqrt: FuntionalCall = new FuntionalCall("sqrt", minus);
   let var1: Variable = new Variable("var");
@@ -158,8 +191,8 @@
   );
   let callAbs: FuntionalCall = new FuntionalCall("abs", mult);
 
-  let CST = new CopySyntaxTree();
-  let newExpr = minus.transform(CST);
-  console.log(newExpr.evaluate());
-  console.log(minus.evaluate());
+  let FC = new FoldConstants();
+  let newExpr: Expression = callAbs.transform(FC);
+  console.log(callAbs);
+  console.log(newExpr);
 }
