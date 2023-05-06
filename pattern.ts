@@ -1,14 +1,6 @@
 export abstract class Transformer {
   abstract transformNumber(number: Number_): Expression;
   abstract transformBinaryOperation(
-    binaryOperation: BinaryOperation
-  ): Expression;
-  abstract transformFunctionCall(functionalCall: FuntionalCall): Expression;
-  abstract transformVariable(variable: Variable): Expression;
-}
-
-export abstract class Expression {
-  abstract evaluate(): number;
   abstract transform(tr: Transformer): Expression;
 }
 
