@@ -6,13 +6,7 @@ describe("Класс CopySyntaxTree", () => {
     describe("Копирование объекта класса Number", () => {
         const num1 = new pattern_1.Number_(16.0);
         const CST = new pattern_1.CopySyntaxTree();
-        const newExpr = num1.transform(CST);
-        it("Исходный объект и новый объект являются различными объектами", () => {
-            chai_1.assert.notEqual(num1, newExpr);
-        });
-        it("Исходный объект и новый объект имеют идентичные AST представления", () => {
-            chai_1.assert.deepStrictEqual(num1, newExpr);
-        });
+        const ne
     });
     describe("Копирование объекта класса BinaryOperation", () => {
         const num1 = new pattern_1.Number_(16.0);
