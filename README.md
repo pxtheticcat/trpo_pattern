@@ -1,5 +1,3 @@
-Laboratory work 6&7
+# When it was lab work on development and design patterns...
 
-История паттерна.
-Критерии использования паттерна.
-Реализация паттерна.
+Patterns such as Straregy and Visitor are implemented here.
